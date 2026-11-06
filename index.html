@@ -49,6 +49,8 @@
   .percent { font-size:1.2rem; color:var(--muted); margin:0 0 8px; }
   .level { font-size:1.3rem; font-weight:700; color:var(--accent-dark); margin:12px 0 4px; }
   .note { color:var(--muted); font-size:.9rem; margin-top:16px; }
+  .range { color:var(--muted); font-weight:600; margin:0 0 8px; }
+  #level-desc { margin:0 0 4px; }
   .hidden { display:none; }
   .lightbox { position:fixed; inset:0; z-index:10; background:rgba(10,20,30,.92); overflow:auto; padding:12px; padding-top:calc(12px + env(safe-area-inset-top)); -webkit-overflow-scrolling:touch; }
   .lightbox img { display:block; width:100%; max-width:1100px; margin:8px auto 0; height:auto; background:#fff; border-radius:8px; }
@@ -116,8 +118,10 @@
     <div class="score" id="score-text"></div>
     <p class="percent" id="percent-text"></p>
     <p class="level" id="level-title"></p>
+    <p class="range" id="level-range"></p>
     <p id="level-desc"></p>
-    <p class="note" id="save-note">Click Finish to save your result. Click Back if you want to change an answer.</p>
+    <p class="note" id="level-disclaimer"></p>
+    <p class="note" id="save-note">Click Finish to receive an email of your test answers and results.</p>
     <div class="btn-row">
       <button id="review-btn" type="button" class="secondary">Back</button>
       <button id="finish-btn" type="button">Finish</button>
@@ -143,6 +147,29 @@
 /* ===== SETTINGS ===== */
 var API_URL = "https://cuddly-numbat.pikapod.net/webhook/plumber-quiz-v2";
 var REQUEST_TIMEOUT_MS = 20000;
+
+/* ===== WHAT EACH SCORE LEVEL MEANS =====
+   The level name comes from n8n. This text is shown under the score.
+   Keys must match the level names n8n sends back. */
+var LEVEL_INFO = {
+  "Industry-Ready Beginner": {
+    range: "Score range: 27–30 points",
+    text: "You have demonstrated a strong understanding of basic plumbing concepts, including fixtures, water supply, drainage, and plumbing components. Your results suggest you have the foundational knowledge needed to begin supervised, hands-on plumbing training. Your next step is to build practical skills and learn how to apply these concepts in real plumbing situations."
+  },
+  "Acceptable Entry-Level": {
+    range: "Score range: 23–26 points",
+    text: "You understand most basic plumbing concepts and can recognize several important components and their functions. Some areas, such as water supply, drainage, or venting, may need additional review. You have a useful starting foundation for the training program and can strengthen your knowledge through instruction and hands-on practice."
+  },
+  "Needs Foundational Support": {
+    range: "Score range: 18–22 points",
+    text: "Your results show that you understand some plumbing fundamentals, but there are gaps in your knowledge of components and how plumbing systems work. You may benefit from additional instruction on water supply, drainage, venting, and basic terminology. Focused lessons and guided practice can help you build the knowledge needed for more advanced training."
+  },
+  "Not Yet Ready": {
+    range: "Score range: 0–17 points",
+    text: "Your results indicate that you need more instruction in basic plumbing concepts before moving into advanced training activities. Key areas to focus on include identifying plumbing components, understanding water supply and drainage systems, and learning essential terminology. A structured introductory course can help establish these fundamentals."
+  }
+};
+var LEVEL_DISCLAIMER = "Interpretations are training-program guidance, not evidence of certification or independent job readiness.";
 
 /* ===== QUESTIONS =====
    This page holds only the questions and choices.
@@ -502,8 +529,11 @@ function submitForScore() {
       $("score-text").textContent = d.score + " / " + d.total;
       $("percent-text").textContent = Number(d.percent).toFixed(1) + "%";
       $("level-title").textContent = d.level;
-      $("level-desc").textContent = d.description;
-      $("save-note").textContent = "Click Finish to save your result. Click Back if you want to change an answer.";
+      var info = LEVEL_INFO[d.level];
+      $("level-range").textContent = info ? info.range : "";
+      $("level-desc").textContent = info ? info.text : d.description;
+      $("level-disclaimer").textContent = info ? LEVEL_DISCLAIMER : "";
+      $("save-note").textContent = "Click Finish to receive an email of your test answers and results.";
       $("finish-btn").textContent = "Finish";
       $("finish-btn").disabled = false;
       $("review-btn").disabled = false;
