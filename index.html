@@ -253,7 +253,7 @@ var QUESTIONS = [
 var person = { firstName: "", lastName: "", email: "" };
 var current = 0;
 var picks = [];
-var sentAnswers = null;
+var savedRecordId = null;
 
 function $(id) { return document.getElementById(id); }
 function show(id) {
@@ -512,17 +512,17 @@ $("next-btn").addEventListener("click", function () {
 });
 
 /* ===== SCREEN 3 ===== */
-/* Submit: send the raw answers to n8n. n8n scores them and sends back the result. Nothing is saved yet. */
+/* Submit: send the raw answers to n8n. n8n scores them, saves the result, and sends back the score and the saved row's ID. */
 function submitForScore() {
   var answers = [];
   for (var i = 0; i < QUESTIONS.length; i++) { answers.push(picks[i]); }
   $("next-btn").disabled = true;
-  $("next-btn").textContent = "Scoring...";
+  $("next-btn").textContent = "Submitting...";
   $("quiz-error").textContent = "";
 
-  callApi(who("score", { answers: answers })).then(function (r) {
-    if (r.ok) {
-      sentAnswers = answers;
+  callApi(who("save", { answers: answers })).then(function (r) {
+    if (r.ok && r.data && typeof r.data.recordId === "string" && r.data.recordId !== "") {
+      savedRecordId = r.data.recordId;
       var d = r.data;
       $("done-name").textContent = person.firstName;
       $("score-text").textContent = d.score + " / " + d.total;
@@ -539,7 +539,7 @@ function submitForScore() {
     } else {
       $("next-btn").disabled = false;
       $("next-btn").textContent = "Submit";
-      $("quiz-error").textContent = messageFor(r, "We could not score your test. Please try again.");
+      $("quiz-error").textContent = messageFor(r, "We could not submit your test. Please try again.");
     }
   }, function () {
     $("next-btn").disabled = false;
@@ -548,23 +548,23 @@ function submitForScore() {
   });
 }
 
-/* Finish: n8n scores the answers again and saves the result. Then show the thank you screen. */
+/* Finish: tell n8n the person clicked Finish. n8n ticks "Email Requested" on the saved row, which sends the recap email. */
 $("finish-btn").addEventListener("click", function () {
-  $("save-note").textContent = "Saving your result...";
+  $("save-note").textContent = "Requesting your email...";
   $("finish-btn").disabled = true;
 
-  callApi(who("save", { answers: sentAnswers })).then(function (r) {
+  callApi(who("finish", { recordId: savedRecordId })).then(function (r) {
     if (r.ok) {
       markDone();
       show("screen-final");
     } else {
-      $("save-note").textContent = messageFor(r, "We could not save your result. Please try again.");
-      $("finish-btn").textContent = "Try saving again";
+      $("save-note").textContent = messageFor(r, "We could not request your email. Please try again.");
+      $("finish-btn").textContent = "Try again";
       $("finish-btn").disabled = false;
     }
   }, function () {
-    $("save-note").textContent = "We could not save your result. Please try again.";
-    $("finish-btn").textContent = "Try saving again";
+    $("save-note").textContent = "We could not request your email. Please try again.";
+    $("finish-btn").textContent = "Try again";
     $("finish-btn").disabled = false;
   });
 });
