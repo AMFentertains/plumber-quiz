@@ -292,16 +292,6 @@ function messageFor(r, fallback) {
   return (r && r.data && r.data.error) ? r.data.error : fallback;
 }
 
-/* ===== ONE ATTEMPT PER BROWSER (n8n also blocks a repeat email) ===== */
-var DONE_KEY = "plumberQuizSubmitted";
-function alreadyDone() {
-  try { return localStorage.getItem(DONE_KEY) === "1"; } catch (e) { return false; }
-}
-function markDone() {
-  try { localStorage.setItem(DONE_KEY, "1"); } catch (e) {}
-}
-if (alreadyDone()) { show("screen-final"); }
-
 /* ===== SCREEN 1 ===== */
 $("email").addEventListener("input", function () {
   $("email2-wrap").classList.toggle("hidden", $("email").value.trim() === "");
@@ -555,7 +545,6 @@ $("finish-btn").addEventListener("click", function () {
 
   callApi(who("finish", { recordId: savedRecordId })).then(function (r) {
     if (r.ok) {
-      markDone();
       show("screen-final");
     } else {
       $("save-note").textContent = messageFor(r, "We could not request your email. Please try again.");
