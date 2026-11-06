@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plumbing Basics Quiz</title>
+<style>
+  :root { --ink:#1b2a35; --muted:#5c6b76; --line:#d5dde3; --bg:#f4f7f9; --accent:#0b6fa4; --accent-dark:#085581; --good:#1f7a4d; --bad:#b3261e; }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin:0; min-height:100vh; min-height:100dvh; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); line-height:1.5;
+         padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right); padding-bottom:env(safe-area-inset-bottom); }
+  main { max-width: 620px; margin: 0 auto; padding: 16px 12px 40px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:18px; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  h2 { font-size:1.2rem; margin:0 0 8px; overflow-wrap:anywhere; }
+  p.sub { color:var(--muted); margin:0 0 20px; }
+  p.hint { color:var(--muted); margin:0 0 14px; font-size:.95rem; }
+  label.field { display:block; font-weight:600; margin:14px 0 6px; }
+  input[type=text], input[type=email] { width:100%; min-height:48px; padding:12px; font-size:16px; border:1px solid var(--line); border-radius:8px; }
+  input:focus-visible, button:focus-visible, .opt:focus-within, .chip:focus-within, .img-btn:focus-visible { outline:3px solid #8cc7e8; outline-offset:2px; }
+  button { font-family:inherit; font-size:1rem; font-weight:600; min-height:48px; padding:12px 22px; border-radius:8px; border:0; background:var(--accent); color:#fff; cursor:pointer; margin-top:20px; touch-action:manipulation; }
+  button:hover:not(:disabled) { background:var(--accent-dark); }
+  button:disabled { background:#a9b7c0; cursor:not-allowed; }
+  button.secondary { background:#fff; color:var(--accent); border:1px solid var(--accent); }
+  button.secondary:hover:not(:disabled) { background:#eaf5fb; }
+  .btn-row { display:flex; gap:12px; flex-wrap:wrap; }
+  .btn-row button { flex:1 1 140px; }
+  .progress { font-size:.9rem; color:var(--muted); margin-bottom:8px; }
+  .bar { height:6px; background:var(--line); border-radius:3px; margin-bottom:20px; overflow:hidden; }
+  .bar > span { display:block; height:100%; background:var(--accent); width:0; transition:width .2s; }
+  fieldset { border:0; margin:0; padding:0; min-width:0; }
+  .opt { display:flex; gap:12px; align-items:flex-start; min-height:48px; padding:12px; border:1px solid var(--line); border-radius:8px; margin-bottom:10px; cursor:pointer; overflow-wrap:anywhere; }
+  .opt input { width:22px; height:22px; margin:2px 0 0; flex:0 0 22px; }
+  .opt.selected { border-color:var(--accent); background:#eaf5fb; }
+  .opt .letter { font-weight:700; min-width:1.4em; display:inline-block; }
+  .img-btn { display:block; width:100%; padding:0; margin:0 0 6px; border:1px solid var(--line); border-radius:8px; background:#fff; cursor:zoom-in; min-height:0; }
+  .img-btn:hover:not(:disabled) { background:#fff; }
+  .q-image { display:block; width:100%; height:auto; border-radius:8px; }
+  .img-tip { color:var(--muted); font-size:.85rem; margin:0 0 14px; }
+  .chips { display:grid; grid-template-columns:repeat(auto-fill, minmax(64px, 1fr)); gap:10px; }
+  .chip { display:flex; align-items:center; justify-content:center; gap:10px; min-height:52px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; cursor:pointer; font-weight:700; font-size:1.05rem; }
+  .chip input { width:22px; height:22px; margin:0; }
+  .chip.selected { border-color:var(--accent); background:#eaf5fb; }
+  .sentence { font-size:1.05rem; line-height:2.8; overflow-wrap:anywhere; }
+  .sentence input[type=text] { width:11rem; max-width:100%; min-height:44px; padding:6px 10px; margin:0 4px; display:inline-block; }
+  .error { color:var(--bad); margin:10px 0 0; min-height:1.2em; }
+  .score { font-size:3rem; font-weight:700; margin:8px 0 0; }
+  .percent { font-size:1.2rem; color:var(--muted); margin:0 0 8px; }
+  .level { font-size:1.3rem; font-weight:700; color:var(--accent-dark); margin:12px 0 4px; }
+  .note { color:var(--muted); font-size:.9rem; margin-top:16px; }
+  .hidden { display:none; }
+  .lightbox { position:fixed; inset:0; z-index:10; background:rgba(10,20,30,.92); overflow:auto; padding:12px; padding-top:calc(12px + env(safe-area-inset-top)); -webkit-overflow-scrolling:touch; }
+  .lightbox img { display:block; width:100%; max-width:1100px; margin:8px auto 0; height:auto; background:#fff; border-radius:8px; }
+  .lightbox button { display:block; margin:0 0 0 0; min-width:140px; position:sticky; left:0; }
+  .lightbox .lb-tip { color:#fff; margin:8px 0 0; font-size:.9rem; position:sticky; left:0; }
+  /* On phones the enlarged picture is wider than the screen. Scroll sideways inside the viewer, or pinch to zoom. */
+  @media (max-width: 699px) {
+    .lightbox img { width:900px; max-width:none; margin:8px 0 0; }
+  }
+  @media (min-width: 700px) {
+    main { max-width: 720px; padding: 32px 20px 56px; }
+    .card { padding: 32px; }
+    h1 { font-size:1.7rem; }
+    h2 { font-size:1.4rem; }
+    .btn-row button { flex:0 0 auto; min-width:140px; }
+    .chips { grid-template-columns:repeat(auto-fill, 88px); }
+  }
+  @media (min-width: 1100px) {
+    main { max-width: 780px; padding-top: 48px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .bar > span { transition:none; } }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- Screen 1: info -->
+  <section id="screen-info" class="card">
+    <h1>Plumbing Basics Quiz</h1>
+    <p class="sub">10 questions. Enter your details to start.</p>
+    <form id="info-form" novalidate>
+      <label class="field" for="first-name">First name</label>
+      <input id="first-name" type="text" autocomplete="given-name" maxlength="80" required>
+      <label class="field" for="last-name">Last name</label>
+      <input id="last-name" type="text" autocomplete="family-name" maxlength="80" required>
+      <label class="field" for="email">Email address</label>
+      <input id="email" type="email" autocomplete="email" inputmode="email" maxlength="254" autocapitalize="none" required>
+      <div id="email2-wrap" class="hidden">
+        <label class="field" for="email2">Confirm email address</label>
+        <input id="email2" type="email" autocomplete="off" inputmode="email" maxlength="254" autocapitalize="none" required>
+      </div>
+      <p class="error" id="info-error" role="alert"></p>
+      <button id="start-btn" type="submit">Start the quiz</button>
+    </form>
+  </section>
+
+  <!-- Screen 2: questions -->
+  <section id="screen-quiz" class="card hidden">
+    <div class="progress" id="progress"></div>
+    <div class="bar"><span id="bar-fill"></span></div>
+    <h2 id="q-text"></h2>
+    <p class="hint hidden" id="q-hint"></p>
+    <div id="q-body"></div>
+    <p class="error" id="quiz-error" role="alert"></p>
+    <div class="btn-row">
+      <button id="back-btn" type="button" class="secondary">Back</button>
+      <button id="next-btn" type="button">Next</button>
+    </div>
+  </section>
+
+  <!-- Screen 3: score -->
+  <section id="screen-done" class="card hidden">
+    <h1>You're all set</h1>
+    <p class="sub">Thanks, <span id="done-name"></span>. Here is your score.</p>
+    <div class="score" id="score-text"></div>
+    <p class="percent" id="percent-text"></p>
+    <p class="level" id="level-title"></p>
+    <p id="level-desc"></p>
+    <p class="note" id="save-note">Click Finish to save your result. Click Back if you want to change an answer.</p>
+    <div class="btn-row">
+      <button id="review-btn" type="button" class="secondary">Back</button>
+      <button id="finish-btn" type="button">Finish</button>
+    </div>
+  </section>
+
+  <!-- Screen 4: final thank you -->
+  <section id="screen-final" class="card hidden">
+    <h1>Thank you</h1>
+    <p class="sub">Thank you. Please check your email for a recap of your answers and the results.</p>
+  </section>
+
+</main>
+
+<!-- Enlarged picture -->
+<div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="Enlarged picture">
+  <button id="lightbox-close" type="button" class="secondary">Close</button>
+  <p class="lb-tip">Swipe sideways to see the whole picture, or pinch to zoom.</p>
+  <img id="lightbox-img" alt="">
+</div>
+
+<script>
+/* ===== SETTINGS ===== */
+var API_URL = "https://cuddly-numbat.pikapod.net/webhook/plumber-quiz-v2";
+var REQUEST_TIMEOUT_MS = 20000;
+
+/* ===== QUESTIONS =====
+   This page holds only the questions and choices.
+   The answer key and all scoring live in n8n, not in this file.
+   type "single": pick one option. The page sends the position (0 to 3).
+   type "images": one picture with letters in it. The page sends the letters picked.
+   type "blanks": "parts" mixes text and blank numbers. The page sends the 2 typed answers. */
+var QUESTIONS = [
+  { type: "single",
+    q: "What is plumbing fixture trim, and what is one example?",
+    options: [
+      "The pipes that carry water to plumbing fixtures, such as copper or PEX piping.",
+      "The visible fittings and hardware used to complete or operate a plumbing fixture, such as a faucet or shower handle.",
+      "The equipment used to remove wastewater from a building, such as a drainpipe or sewer line.",
+      "The plumbing fixtures that hold or use water, such as a sink or bathtub."
+    ] },
+
+  { type: "single",
+    q: "What is a plumbing fixture?",
+    hint: "Select one correct answer.",
+    options: [
+      "A pipe or fitting used to carry water throughout a building, such as copper or PEX piping.",
+      "A device used to control water pressure in a plumbing system, such as a pressure-reducing valve.",
+      "A device or receptacle connected to a plumbing system that receives or delivers water or wastewater, such as a sink, toilet, or bathtub.",
+      "A component used to connect drainage pipes, such as an elbow or coupling."
+    ] },
+
+  { type: "images", pick: "many",
+    q: "Look at the images below. Select all images that show plumbing fixtures rather than plumbing fixture trim.",
+    image: "images/q3-fixtures.jpg",
+    alt: "Six plumbing items labeled A to F. A is a chrome bathroom faucet. B is a white toilet with a tank. C is a chrome wall showerhead. D is a white wall-mounted sink with a faucet. E is a chrome tub and shower valve trim with a tub spout. F is a white bathtub.",
+    letters: ["A", "B", "C", "D", "E", "F"] },
+
+  { type: "images", pick: "one",
+    q: "Select 1 image that carries pressurized supply water.",
+    image: "images/q4-supply.jpg",
+    alt: "Four plumbing parts labeled A to D. A is blue flexible tubing with a brass elbow fitting. B is a white curved drain trap. C is a white pipe coming out of roof shingles with a black rubber flashing. D is a white angled drain fitting.",
+    letters: ["A", "B", "C", "D"] },
+
+  { type: "images", pick: "many",
+    q: "Look at the images below. Select the two components  commonly used to shut off water or flexibly connect a fixture to a pressurized water supply.  Choose 2 answers.",
+    image: "images/q5-components.jpg",
+    alt: "Four plumbing parts labeled A to D. A is a brass valve with a blue lever handle. B is a chrome showerhead on a wall arm. C is a white elbow fitting. D is a braided steel hose with a nut on each end.",
+    letters: ["A", "B", "C", "D"] },
+
+  { type: "blanks",
+    q: "What are the two main functions of a plumbing system?",
+    parts: ["The two main functions of a plumbing system are to ", 0, " clean water to a building and ", 1, " wastewater safely."] },
+
+  { type: "single",
+    q: "What is a cleanout and where is it required according to plumbing NYC code?",
+    hint: "Select one correct answer.",
+    options: [
+      "A valve that shuts off water during plumbing repairs.",
+      "An access point in drainage piping that allows blockages to be cleared and maintenance to be performed, installed at locations required by plumbing code.",
+      "A fitting that increases water pressure throughout a building.",
+      "A device that prevents wastewater from flowing backward into the water supply."
+    ] },
+
+  { type: "blanks",
+    q: "What are the main components of a bathtub trip-lever drain assembly?",
+    hint: "Fill in the Blank",
+    parts: ["A bathtub trip-lever drain assembly typically includes a trip lever, a ", 0, ", and a ", 1, " or stopper mechanism, depending on the design."] },
+
+  { type: "blanks",
+    q: "Explain how wastewater flows through a plumbing waste line.",
+    hint: "Fill in the Blank",
+    parts: ["Wastewater flows primarily ", 0, " through properly sloped drainpipes toward the building sewer or septic system. ", 1, " helps maintain proper air pressure and protects trap seals."] },
+
+  { type: "single",
+    q: "What is the purpose of a plumbing shutoff valve, and where is it typically installed?",
+    hint: "Select one correct answer.",
+    options: [
+      "To increase water pressure, typically installed inside a drainpipe.",
+      "To remove wastewater, typically installed beneath a bathtub.",
+      "To control or stop water flow for repairs and maintenance, typically installed near fixtures or at the main water supply.",
+      "To prevent sewer gases from entering a building, typically installed in vent piping."
+    ] }
+];
+
+/* ===== STATE ===== */
+var person = { firstName: "", lastName: "", email: "" };
+var current = 0;
+var picks = [];
+var sentAnswers = null;
+
+function $(id) { return document.getElementById(id); }
+function show(id) {
+  ["screen-info", "screen-quiz", "screen-done", "screen-final"].forEach(function (s) {
+    $(s).classList.toggle("hidden", s !== id);
+  });
+  window.scrollTo(0, 0);
+}
+
+/* ===== TALKING TO n8n ===== */
+/* Resolves to { ok, status, data }. Rejects only if the server cannot be reached. */
+function callApi(payload) {
+  var opts = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) };
+  var timer = null;
+  if (typeof AbortController !== "undefined") {
+    var ctl = new AbortController();
+    opts.signal = ctl.signal;
+    timer = setTimeout(function () { ctl.abort(); }, REQUEST_TIMEOUT_MS);
+  }
+  return fetch(API_URL, opts).then(function (res) {
+    if (timer) { clearTimeout(timer); }
+    return res.json().then(function (data) { return data; }, function () { return {}; }).then(function (data) {
+      return { ok: res.ok && data && data.ok === true, status: res.status, data: data || {} };
+    });
+  }, function (err) {
+    if (timer) { clearTimeout(timer); }
+    throw err;
+  });
+}
+function who(mode, extra) {
+  var p = { mode: mode, firstName: person.firstName, lastName: person.lastName, email: person.email };
+  if (extra) { Object.keys(extra).forEach(function (k) { p[k] = extra[k]; }); }
+  return p;
+}
+function messageFor(r, fallback) {
+  return (r && r.data && r.data.error) ? r.data.error : fallback;
+}
+
+/* ===== ONE ATTEMPT PER BROWSER (n8n also blocks a repeat email) ===== */
+var DONE_KEY = "plumberQuizSubmitted";
+function alreadyDone() {
+  try { return localStorage.getItem(DONE_KEY) === "1"; } catch (e) { return false; }
+}
+function markDone() {
+  try { localStorage.setItem(DONE_KEY, "1"); } catch (e) {}
+}
+if (alreadyDone()) { show("screen-final"); }
+
+/* ===== SCREEN 1 ===== */
+$("email").addEventListener("input", function () {
+  $("email2-wrap").classList.toggle("hidden", $("email").value.trim() === "");
+});
+
+$("info-form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var firstName = $("first-name").value.trim();
+  var lastName = $("last-name").value.trim();
+  var email = $("email").value.trim();
+  var email2 = $("email2").value.trim();
+  var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!firstName) { $("info-error").textContent = "Please enter your first name."; return; }
+  if (!lastName) { $("info-error").textContent = "Please enter your last name."; return; }
+  if (!emailOk) { $("info-error").textContent = "Please enter a valid email address."; return; }
+  if (email.toLowerCase() !== email2.toLowerCase()) { $("info-error").textContent = "The two email addresses do not match."; return; }
+  $("info-error").textContent = "";
+  person.firstName = firstName;
+  person.lastName = lastName;
+  person.email = email;
+
+  $("start-btn").disabled = true;
+  $("start-btn").textContent = "Checking...";
+  callApi(who("check")).then(function (r) {
+    $("start-btn").disabled = false;
+    $("start-btn").textContent = "Start the quiz";
+    if (r.ok) {
+      current = 0;
+      picks = [];
+      renderQuestion();
+      show("screen-quiz");
+    } else {
+      $("info-error").textContent = messageFor(r, "We could not start the quiz. Please try again.");
+    }
+  }, function () {
+    $("start-btn").disabled = false;
+    $("start-btn").textContent = "Start the quiz";
+    $("info-error").textContent = "We could not reach the quiz server. Check your connection and try again.";
+  });
+});
+
+/* ===== SCREEN 2 ===== */
+function makeChoice(box, kind, name, value, labelNode, checked, cls) {
+  var label = document.createElement("label");
+  label.className = cls;
+  var input = document.createElement("input");
+  input.type = kind;
+  input.name = name;
+  input.value = value;
+  if (checked) { input.checked = true; label.classList.add("selected"); }
+  input.addEventListener("change", function () {
+    if (kind === "radio") {
+      Array.prototype.forEach.call(box.querySelectorAll("." + cls.split(" ")[0]), function (c) { c.classList.remove("selected"); });
+      label.classList.add("selected");
+    } else {
+      label.classList.toggle("selected", input.checked);
+    }
+  });
+  label.appendChild(input);
+  label.appendChild(labelNode);
+  return label;
+}
+
+function openLightbox(src, alt) {
+  $("lightbox-img").src = src;
+  $("lightbox-img").alt = alt;
+  $("lightbox").classList.remove("hidden");
+  $("lightbox-close").focus();
+}
+function closeLightbox() { $("lightbox").classList.add("hidden"); }
+$("lightbox-close").addEventListener("click", closeLightbox);
+$("lightbox").addEventListener("click", function (e) { if (e.target === $("lightbox")) { closeLightbox(); } });
+document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeLightbox(); } });
+
+function renderQuestion() {
+  var item = QUESTIONS[current];
+  var total = QUESTIONS.length;
+  $("progress").textContent = "Question " + (current + 1) + " of " + total;
+  $("bar-fill").style.width = (current / total * 100) + "%";
+  $("q-text").textContent = item.q;
+  $("quiz-error").textContent = "";
+  $("q-hint").textContent = item.hint || "";
+  $("q-hint").classList.toggle("hidden", !item.hint);
+
+  var box = $("q-body");
+  box.innerHTML = "";
+  var saved = picks[current];
+
+  if (item.type === "single") {
+    item.options.forEach(function (text, i) {
+      var span = document.createElement("span");
+      var letter = document.createElement("span");
+      letter.className = "letter";
+      letter.textContent = "ABCD".charAt(i) + ".";
+      var body = document.createElement("span");
+      body.textContent = text;
+      span.appendChild(letter);
+      span.appendChild(body);
+      box.appendChild(makeChoice(box, "radio", "choice", i, span, saved === i, "opt"));
+    });
+  } else if (item.type === "images") {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "img-btn";
+    btn.setAttribute("aria-label", "Enlarge picture");
+    var img = document.createElement("img");
+    img.className = "q-image";
+    img.src = item.image;
+    img.alt = item.alt;
+    btn.appendChild(img);
+    btn.addEventListener("click", function () { openLightbox(item.image, item.alt); });
+    box.appendChild(btn);
+    var tip = document.createElement("p");
+    tip.className = "img-tip";
+    tip.textContent = "Tap the picture to enlarge it.";
+    box.appendChild(tip);
+
+    var fs = document.createElement("fieldset");
+    var legend = document.createElement("legend");
+    legend.className = "hint";
+    legend.textContent = (item.pick === "one") ? "Pick one letter." : "Pick the letters that apply.";
+    fs.appendChild(legend);
+    var chips = document.createElement("div");
+    chips.className = "chips";
+    var kind = (item.pick === "one") ? "radio" : "checkbox";
+    item.letters.forEach(function (l) {
+      var span = document.createElement("span");
+      span.textContent = l;
+      var on = (saved || []).indexOf(l) > -1;
+      chips.appendChild(makeChoice(chips, kind, "choice", l, span, on, "chip"));
+    });
+    fs.appendChild(chips);
+    box.appendChild(fs);
+  } else {
+    var p = document.createElement("p");
+    p.className = "sentence";
+    item.parts.forEach(function (part) {
+      if (typeof part === "number") {
+        var input = document.createElement("input");
+        input.type = "text";
+        input.className = "blank";
+        input.id = "blank-" + part;
+        input.maxLength = 100;
+        input.autocomplete = "off";
+        input.autocapitalize = "none";
+        input.setAttribute("autocorrect", "off");
+        input.spellcheck = false;
+        input.setAttribute("aria-label", "Blank " + (part + 1));
+        input.value = (saved && saved[part]) ? saved[part] : "";
+        p.appendChild(input);
+      } else {
+        p.appendChild(document.createTextNode(part));
+      }
+    });
+    box.appendChild(p);
+  }
+
+  $("next-btn").textContent = (current === total - 1) ? "Submit" : "Next";
+  $("next-btn").disabled = false;
+  $("back-btn").classList.toggle("hidden", current === 0);
+}
+
+/* Read what the person picked or typed. Returns null if nothing was answered. */
+function readAnswer() {
+  var item = QUESTIONS[current];
+  if (item.type === "single") {
+    var chosen = document.querySelector('input[name="choice"]:checked');
+    return chosen ? parseInt(chosen.value, 10) : null;
+  }
+  if (item.type === "images") {
+    var list = [];
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="choice"]:checked'), function (c) { list.push(c.value); });
+    return list.length ? list : null;
+  }
+  var vals = [];
+  Array.prototype.forEach.call(document.querySelectorAll("input.blank"), function (c, i) { vals[i] = c.value.trim(); });
+  var any = vals.some(function (v) { return v !== ""; });
+  return any ? vals : null;
+}
+
+function keepAnswer() {
+  var a = readAnswer();
+  if (a !== null) { picks[current] = a; } else { delete picks[current]; }
+  return a;
+}
+
+$("back-btn").addEventListener("click", function () {
+  keepAnswer();
+  if (current > 0) {
+    current -= 1;
+    renderQuestion();
+  }
+});
+
+$("next-btn").addEventListener("click", function () {
+  var item = QUESTIONS[current];
+  var a = keepAnswer();
+  if (a === null) {
+    $("quiz-error").textContent = (item.type === "blanks") ? "Please fill in at least one blank." : "Please pick an answer.";
+    return;
+  }
+  if (current < QUESTIONS.length - 1) {
+    current += 1;
+    renderQuestion();
+  } else {
+    submitForScore();
+  }
+});
+
+/* ===== SCREEN 3 ===== */
+/* Submit: send the raw answers to n8n. n8n scores them and sends back the result. Nothing is saved yet. */
+function submitForScore() {
+  var answers = [];
+  for (var i = 0; i < QUESTIONS.length; i++) { answers.push(picks[i]); }
+  $("next-btn").disabled = true;
+  $("next-btn").textContent = "Scoring...";
+  $("quiz-error").textContent = "";
+
+  callApi(who("score", { answers: answers })).then(function (r) {
+    if (r.ok) {
+      sentAnswers = answers;
+      var d = r.data;
+      $("done-name").textContent = person.firstName;
+      $("score-text").textContent = d.score + " / " + d.total;
+      $("percent-text").textContent = Number(d.percent).toFixed(1) + "%";
+      $("level-title").textContent = d.level;
+      $("level-desc").textContent = d.description;
+      $("save-note").textContent = "Click Finish to save your result. Click Back if you want to change an answer.";
+      $("finish-btn").textContent = "Finish";
+      $("finish-btn").disabled = false;
+      $("review-btn").disabled = false;
+      show("screen-done");
+    } else {
+      $("next-btn").disabled = false;
+      $("next-btn").textContent = "Submit";
+      $("quiz-error").textContent = messageFor(r, "We could not score your test. Please try again.");
+    }
+  }, function () {
+    $("next-btn").disabled = false;
+    $("next-btn").textContent = "Submit";
+    $("quiz-error").textContent = "We could not reach the quiz server. Check your connection and try again.";
+  });
+}
+
+/* Back from the score screen: return to question 10 with the answers kept. */
+$("review-btn").addEventListener("click", function () {
+  current = QUESTIONS.length - 1;
+  renderQuestion();
+  show("screen-quiz");
+});
+
+/* Finish: n8n scores the answers again and saves the result. Then show the thank you screen. */
+$("finish-btn").addEventListener("click", function () {
+  $("save-note").textContent = "Saving your result...";
+  $("finish-btn").disabled = true;
+  $("review-btn").disabled = true;
+
+  callApi(who("save", { answers: sentAnswers })).then(function (r) {
+    if (r.ok) {
+      markDone();
+      show("screen-final");
+    } else {
+      $("save-note").textContent = messageFor(r, "We could not save your result. Please try again.");
+      $("finish-btn").textContent = "Try saving again";
+      $("finish-btn").disabled = false;
+      $("review-btn").disabled = false;
+    }
+  }, function () {
+    $("save-note").textContent = "We could not save your result. Please try again.";
+    $("finish-btn").textContent = "Try saving again";
+    $("finish-btn").disabled = false;
+    $("review-btn").disabled = false;
+  });
+});
+</script>
+</body>
+</html>
